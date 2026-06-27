@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import productsApi, { type Product } from '../../api/products/productsApi'
 import { PATHS } from '../../routes/paths'
 import '../../styles/pages/category.css'
+import { useDebounce } from '../../hooks/useDebounce'
 
 const brandOptions = ['ZARA', 'HM', 'HERMES', 'GUCCI', 'CHANEL', 'NIKE', 'ADIDAS']
 
@@ -26,6 +27,8 @@ export default function BrandsCategoryPage() {
   
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory)
 
+  const debouncedCondition = useDebounce(conditionRange, 400)
+
   // Update selectedCategory if URL changes
   useEffect(() => {
     const currentParam = new URLSearchParams(location.search).get('category') || ''
@@ -34,7 +37,7 @@ export default function BrandsCategoryPage() {
 
   useEffect(() => {
     fetchProducts()
-  }, [selectedBrand, selectedCategory, selectedStyle, selectedSize, conditionRange, selectedDefects, sortBy, page])
+  }, [selectedBrand, selectedCategory, selectedStyle, selectedSize, debouncedCondition, selectedDefects, sortBy, page])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -214,9 +217,9 @@ export default function BrandsCategoryPage() {
                     <div className="category__card-media-new">
                       {product.imageUrls && product.imageUrls.length > 0 ? (
                         <>
-                          <img src={product.imageUrls[0]} alt={product.name} className="primary-img" />
+                          <img src={product.imageUrls[0]} alt={product.name} className="primary-img" loading="lazy" decoding="async" />
                           {product.imageUrls[1] && (
-                            <img src={product.imageUrls[1]} alt={product.name} className="secondary-img" />
+                            <img src={product.imageUrls[1]} alt={product.name} className="secondary-img" loading="lazy" decoding="async" />
                           )}
                         </>
                       ) : (

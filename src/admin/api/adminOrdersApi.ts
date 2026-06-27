@@ -16,4 +16,9 @@ export const adminOrdersApi = {
     })
     return data
   },
+
+  markPaid: async (orderCode: string) => {
+    const { data } = await axiosClient.post(`/api/admin/orders/${orderCode}/mark-paid`)
+    return data
+  },
 }

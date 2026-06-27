@@ -4,6 +4,7 @@ import productsApi, { type Product } from '../../api/products/productsApi'
 import { PATHS } from '../../routes/paths'
 import bannerThethao from '../../assets/images/banner-thethao.png'
 import '../../styles/pages/category.css'
+import { useDebounce } from '../../hooks/useDebounce'
 
 export default function SportCategoryPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -27,6 +28,11 @@ export default function SportCategoryPage() {
   
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory)
 
+  const debouncedSearch = useDebounce(searchKeyword, 400)
+  const debouncedMinPrice = useDebounce(minPrice, 400)
+  const debouncedMaxPrice = useDebounce(maxPrice, 400)
+  const debouncedCondition = useDebounce(conditionRange, 400)
+
   // Update selectedCategory if URL changes
   useEffect(() => {
     const currentParam = new URLSearchParams(location.search).get('category') || ''
@@ -35,7 +41,7 @@ export default function SportCategoryPage() {
 
   useEffect(() => {
     fetchProducts()
-  }, [searchKeyword, minPrice, maxPrice, selectedColor, selectedSize, conditionRange, selectedDefects, sortBy, page, selectedCategory])
+  }, [debouncedSearch, debouncedMinPrice, debouncedMaxPrice, selectedColor, selectedSize, debouncedCondition, selectedDefects, sortBy, page, selectedCategory])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -246,9 +252,9 @@ export default function SportCategoryPage() {
                     <div className="category__card-media-new">
                       {product.imageUrls && product.imageUrls.length > 0 ? (
                         <>
-                          <img src={product.imageUrls[0]} alt={product.name} className="primary-img" />
+                          <img src={product.imageUrls[0]} alt={product.name} className="primary-img" loading="lazy" decoding="async" />
                           {product.imageUrls[1] && (
-                            <img src={product.imageUrls[1]} alt={product.name} className="secondary-img" />
+                            <img src={product.imageUrls[1]} alt={product.name} className="secondary-img" loading="lazy" decoding="async" />
                           )}
                         </>
                       ) : (

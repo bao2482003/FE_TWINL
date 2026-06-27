@@ -42,7 +42,7 @@ export interface AdminOrder {
   customerEmail: string
   customerPhone?: string | null
   shippingAddress?: string | null
-  status: 'PENDING' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERED' | 'COMPLETED' | 'CANCELED'
+  status: 'PENDING' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERED' | 'COMPLETED' | 'CANCELED' | 'DISPUTED' | 'RETURNED'
   totalAmount: number
   paymentMethod?: string | null
   paymentStatus?: string | null

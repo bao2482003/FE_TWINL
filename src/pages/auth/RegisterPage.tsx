@@ -203,7 +203,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             className="auth-btn auth-btn--primary"
-            disabled={sendOtpMutation.isPending || !email || !password || !displayName || (!!confirmPassword && confirmPassword !== password)}
+            disabled={sendOtpMutation.isPending || !email || !password || !displayName || !confirmPassword || confirmPassword !== password}
           >
             {sendOtpMutation.isPending ? '...' : 'Đăng ký'}
           </button>

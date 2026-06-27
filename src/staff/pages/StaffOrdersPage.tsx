@@ -5,6 +5,9 @@ import { adminOrdersApi } from '../../admin/api/adminOrdersApi'
 import { adminUsersApi } from '../../admin/api/adminUsersApi'
 import type { AdminOrder, AdminUser } from '../../admin/types'
 
+// Staff cũng có thể xác nhận thanh toán thủ công khi webhook không về
+
+
 const formatPrice = (value: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 
@@ -187,6 +190,7 @@ export default function StaffOrdersPage() {
   const [sizePage] = useState(12)
   const [assignTarget, setAssignTarget] = useState<AdminOrder | null>(null)
   const [successMsg, setSuccessMsg] = useState('')
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['staff-orders', page, sizePage],
@@ -197,6 +201,21 @@ export default function StaffOrdersPage() {
     queryClient.invalidateQueries({ queryKey: ['staff-orders'] })
     setSuccessMsg('✅ Gán Shipper thành công!')
     setTimeout(() => setSuccessMsg(''), 3000)
+  }
+
+  const handleMarkPaid = async (order: AdminOrder) => {
+    if (!window.confirm(`Xác nhận đã nhận tiền cho đơn ${order.code}?`)) return
+    setMarkingPaid(order.code)
+    try {
+      await staffOrdersApi.markPaid(order.code)
+      queryClient.invalidateQueries({ queryKey: ['staff-orders'] })
+      setSuccessMsg(`✅ Đã xác nhận thanh toán cho đơn ${order.code}`)
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch {
+      alert('Xác nhận thất bại, vui lòng thử lại.')
+    } finally {
+      setMarkingPaid(null)
+    }
   }
 
   return (
@@ -267,17 +286,31 @@ export default function StaffOrdersPage() {
                     )}
                   </td>
                   <td>
-                    {order.status === 'PENDING' ? (
-                      <button
-                        type="button"
-                        style={assignButtonStyle}
-                        onClick={() => setAssignTarget(order)}
-                      >
-                        🚀 Gán Shipper
-                      </button>
-                    ) : (
-                      <span style={{ color: '#cbd5e1', fontSize: '0.82rem' }}>—</span>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {order.status === 'PENDING' ? (
+                        order.paymentStatus === 'SUCCESS' ? (
+                          <button
+                            type="button"
+                            style={assignButtonStyle}
+                            onClick={() => setAssignTarget(order)}
+                          >
+                            🚀 Gán Shipper
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            style={{ ...assignButtonStyle, background: '#10b981', opacity: markingPaid === order.code ? 0.65 : 1 }}
+                            onClick={() => handleMarkPaid(order)}
+                            disabled={markingPaid === order.code}
+                            title="Xác nhận đã nhận được tiền chuyển khoản"
+                          >
+                            {markingPaid === order.code ? '⏳ Đang xử lý...' : '✅ Đã nhận tiền'}
+                          </button>
+                        )
+                      ) : (
+                        <span style={{ color: '#cbd5e1', fontSize: '0.82rem' }}>—</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

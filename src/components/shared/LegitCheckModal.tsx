@@ -208,20 +208,11 @@ export default function LegitCheckModal({ isOpen, onClose, productImageUrls }: L
 
     try {
       const urls = imageUrls.slice(0, 4)
-      const files = await Promise.all(
-        urls.map(async (url, i) => {
-          const res = await fetch(url)
-          const blob = await res.blob()
-          return new File([blob], `product-${i + 1}.jpg`, { type: blob.type || 'image/jpeg' })
-        })
-      )
 
-      const formData = new FormData()
-      files.forEach(f => formData.append('files', f))
-
-      const response = await fetch(`${API_BASE_URL}/api/v1/ai/legit-check`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/ai/legit-check-by-urls`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrls: urls }),
       })
 
       clearInterval(progressInterval)

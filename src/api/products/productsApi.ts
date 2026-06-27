@@ -1,4 +1,5 @@
 import { axiosClient } from '../axiosClient';
+import { toAbsUrl } from '../../config/constants';
 
 export interface Product {
   id: number;
@@ -54,13 +55,22 @@ export interface ProductsParams {
   sizePage?: number;
 }
 
+const fixProduct = (p: Product): Product => ({
+  ...p,
+  imageUrls: p.imageUrls?.map(toAbsUrl) ?? []
+})
+
 const productsApi = {
-  getProducts: (params: ProductsParams = {}) => {
-    return axiosClient.get<ProductsResponse>('/api/products', { params });
+  getProducts: async (params: ProductsParams = {}) => {
+    const res = await axiosClient.get<ProductsResponse>('/api/products', { params });
+    res.data.content = res.data.content.map(fixProduct);
+    return res;
   },
 
-  getProductById: (id: number) => {
-    return axiosClient.get<Product>(`/api/products/${id}`);
+  getProductById: async (id: number) => {
+    const res = await axiosClient.get<Product>(`/api/products/${id}`);
+    res.data = fixProduct(res.data);
+    return res;
   },
 };
 

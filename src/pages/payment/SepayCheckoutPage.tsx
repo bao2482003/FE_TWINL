@@ -3,6 +3,7 @@ import { Copy, Check } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PATHS } from '../../routes/paths'
 import orderApi from '../../api/orders/orderApi'
+import { axiosClient } from '../../api/axiosClient'
 import '../../styles/pages/payment-return.css'
 
 export default function SepayCheckoutPage() {
@@ -21,6 +22,19 @@ export default function SepayCheckoutPage() {
   }
 
   const [successCountdown, setSuccessCountdown] = useState(5)
+  const [confirming, setConfirming] = useState(false)
+
+  const handleConfirmTransfer = async () => {
+    setConfirming(true)
+    try {
+      await axiosClient.get(`/api/payments/mock-success`, { params: { orderCode } })
+      setIsSuccess(true)
+    } catch {
+      // poll vẫn đang chạy, sẽ tự detect nếu webhook đến
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   useEffect(() => {
     if (!qrUrl || !orderCode) {
@@ -73,8 +87,8 @@ export default function SepayCheckoutPage() {
 
   const urlObj = qrUrl ? new URL(qrUrl) : null
   const bank = urlObj?.searchParams.get('bank') || 'MBBank'
-  const acc = urlObj?.searchParams.get('acc') || '0853443242'
-  const accountName = urlObj?.searchParams.get('accountName') || 'NGUYEN XUAN QUANG'
+  const acc = urlObj?.searchParams.get('acc') || '0325003576'
+  const accountName = urlObj?.searchParams.get('accountName') || 'DUONG GIA BAO'
   const amount = urlObj?.searchParams.get('amount') || ''
   const des = urlObj?.searchParams.get('des') || orderCode
 
@@ -199,6 +213,13 @@ export default function SepayCheckoutPage() {
             </p>
 
             <div style={{ width: '100%', maxWidth: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={handleConfirmTransfer}
+                disabled={confirming}
+                style={{ width: '100%', padding: '12px', background: '#047857', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', color: '#fff', cursor: confirming ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: confirming ? 0.7 : 1 }}
+              >
+                {confirming ? 'Đang xác nhận...' : '✅ Tôi đã chuyển khoản'}
+              </button>
               <button onClick={() => navigate(PATHS.orders)} style={{ width: '100%', padding: '10px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', fontWeight: '600', color: '#374151', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                 Quản lý Đơn hàng
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>

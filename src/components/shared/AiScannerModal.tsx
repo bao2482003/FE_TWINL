@@ -26,21 +26,13 @@ export default function AiScannerModal({ isOpen, onClose, directScanImageUrls }:
       setIsScanning(false)
       setScanProgress(0)
     } else if (directScanImageUrls && directScanImageUrls.length > 0) {
-      // Bắt đầu scan trực tiếp
       const initiateDirectScan = async () => {
         setSelectedImage(directScanImageUrls[0])
         setIsScanning(true)
         try {
-          const filesToScan: File[] = []
-          for (let i = 0; i < Math.min(directScanImageUrls.length, 6); i++) {
-            const url = directScanImageUrls[i]
-            const res = await fetch(url)
-            const blob = await res.blob()
-            filesToScan.push(new File([blob], `direct-image-${i}.jpg`, { type: blob.type }))
-          }
-          await scanFiles(filesToScan, directScanImageUrls[0])
+          await scanByUrls(directScanImageUrls, directScanImageUrls[0])
         } catch (error) {
-          toast.error('Không thể tải ảnh trực tiếp để quét.')
+          toast.error('Không thể quét ảnh trực tiếp.')
           setIsScanning(false)
         }
       }
@@ -75,6 +67,35 @@ export default function AiScannerModal({ isOpen, onClose, directScanImageUrls }:
       return () => clearInterval(interval)
     }
   }, [isScanning])
+
+  const scanByUrls = async (imageUrls: string[], imageUrlPreview: string) => {
+    const progressInterval = setInterval(() => {
+      setScanProgress(prev => prev >= 95 ? 95 : prev + 5)
+    }, 300)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/ai/scan-by-urls`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrls }),
+      })
+      clearInterval(progressInterval)
+      setScanProgress(100)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || 'API phân tích bị lỗi')
+      }
+      const data = await response.json()
+      setTimeout(() => {
+        onClose()
+        navigate(PATHS.aiResult, { state: { aiResult: data, imagePreview: imageUrlPreview, returnUrl: location.pathname } })
+      }, 1000)
+    } catch (error: any) {
+      clearInterval(progressInterval)
+      toast.error(error.message || 'Quét ảnh thất bại, vui lòng thử lại sau.')
+      setIsScanning(false)
+      setSelectedImage(null)
+    }
+  }
 
   const scanFiles = async (files: File[], imageUrlPreview: string) => {
     // Simulate progress bar

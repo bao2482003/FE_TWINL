@@ -8,4 +8,9 @@ export const staffOrdersApi = {
     })
     return data
   },
+
+  markPaid: async (orderCode: string) => {
+    const { data } = await axiosClient.post(`/api/staff/orders/${orderCode}/mark-paid`)
+    return data
+  },
 }

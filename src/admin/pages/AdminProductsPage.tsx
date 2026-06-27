@@ -6,6 +6,7 @@ import { PATHS } from '../../routes/paths'
 import { API_BASE_URL } from '../../config/constants'
 import type { AdminProduct } from '../types'
 import ConfirmModal from '../../components/shared/ConfirmModal'
+import { toast } from 'react-toastify'
 
 const formatPrice = (value: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
@@ -63,6 +64,11 @@ export default function AdminProductsPage() {
     mutationFn: (id: number) => adminProductsApi.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] })
+      toast.success('Đã xóa sản phẩm thành công')
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Không thể xóa sản phẩm'
+      toast.error(msg)
     },
   })
 

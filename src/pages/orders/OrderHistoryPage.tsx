@@ -15,7 +15,11 @@ const formatPrice = (value: number) =>
 const formatDate = (value: string) => {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleDateString('vi-VN')
+  return parsed.toLocaleString('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
 }
 
 type TabKey = 'ALL' | 'PENDING' | 'PICKED_UP' | 'DELIVERED' | 'COMPLETED' | 'CANCELED' | 'RETURNED'

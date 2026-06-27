@@ -215,7 +215,7 @@ function OrderDetailsModal({ order, onClose }: { order: AdminOrder; onClose: () 
               <h3 style={{ fontSize: '0.9rem', color: '#1e293b', marginBottom: '0.75rem' }}>Thông tin thanh toán & Trạng thái</h3>
               <InfoItem label="Trạng thái đơn" value={STATUS_LABELS[order.status] ?? order.status} />
               <InfoItem label="Thanh toán" value={order.paymentMethod === 'VNPAY' ? 'Chuyển khoản (VNPAY)' : (order.paymentMethod || 'Chuyển khoản')} />
-              <InfoItem label="Trạng thái TT" value={order.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'} />
+              <InfoItem label="Trạng thái TT" value={order.paymentStatus === 'SUCCESS' ? 'Đã thanh toán' : 'Chưa thanh toán'} />
               <InfoItem label="Shipper" value={order.shipperName ?? '—'} />
               <InfoItem label="Ngày giao" value={order.deliveredAt ? formatDateTime(order.deliveredAt) : '—'} />
             </div>
@@ -279,6 +279,7 @@ export default function AdminOrdersPage() {
   const [assignTarget, setAssignTarget] = useState<AdminOrder | null>(null)
   const [viewTarget, setViewTarget] = useState<AdminOrder | null>(null)
   const [successMsg, setSuccessMsg] = useState('')
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-orders', page, sizePage],
@@ -289,6 +290,22 @@ export default function AdminOrdersPage() {
     queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
     setSuccessMsg('✅ Gán Shipper thành công!')
     setTimeout(() => setSuccessMsg(''), 3000)
+  }
+
+  const handleMarkPaid = async (order: AdminOrder, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!window.confirm(`Xác nhận đã nhận tiền cho đơn ${order.code}?`)) return
+    setMarkingPaid(order.code)
+    try {
+      await adminOrdersApi.markPaid(order.code)
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
+      setSuccessMsg(`✅ Đã xác nhận thanh toán cho đơn ${order.code}`)
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch {
+      alert('Xác nhận thất bại, vui lòng thử lại.')
+    } finally {
+      setMarkingPaid(null)
+    }
   }
 
   return (
@@ -372,34 +389,37 @@ export default function AdminOrdersPage() {
                     )}
                   </td>
                   <td>
-                    {order.status === 'PENDING' ? (
-                      order.paymentStatus === 'SUCCESS' ? (
-                        <button
-                          type="button"
-                          style={assignButtonStyle}
-                          onClick={(e) => { e.stopPropagation(); setAssignTarget(order); }}
-                        >
-                          🚀 Gán Shipper
-                        </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {order.status === 'PENDING' ? (
+                        order.paymentStatus === 'SUCCESS' ? (
+                          <button
+                            type="button"
+                            style={assignButtonStyle}
+                            onClick={(e) => { e.stopPropagation(); setAssignTarget(order); }}
+                          >
+                            🚀 Gán Shipper
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            style={{ ...assignButtonStyle, background: '#10b981', opacity: markingPaid === order.code ? 0.65 : 1 }}
+                            onClick={(e) => handleMarkPaid(order, e)}
+                            disabled={markingPaid === order.code}
+                            title="Xác nhận đã nhận được tiền chuyển khoản"
+                          >
+                            {markingPaid === order.code ? '⏳ Đang xử lý...' : '✅ Đã nhận tiền'}
+                          </button>
+                        )
                       ) : (
                         <button
                           type="button"
-                          style={{ ...assignButtonStyle, background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' }}
-                          onClick={(e) => e.stopPropagation()}
-                          title="Đơn hàng chưa được thanh toán"
+                          style={{ ...assignButtonStyle, background: '#e2e8f0', color: '#475569' }}
+                          onClick={(e) => { e.stopPropagation(); setViewTarget(order); }}
                         >
-                          ⏳ Chờ thanh toán
+                          👁 Chi tiết
                         </button>
-                      )
-                    ) : (
-                      <button
-                        type="button"
-                        style={{ ...assignButtonStyle, background: '#e2e8f0', color: '#475569' }}
-                        onClick={(e) => { e.stopPropagation(); setViewTarget(order); }}
-                      >
-                        👁 Chi tiết
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
